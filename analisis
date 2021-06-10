@@ -1,0 +1,54 @@
+#importación de librerías
+import requests
+#definición de funciones
+def descarga(link,file):
+    resp = requests.get(link)
+    output = open(file,'wb')
+    output.write(resp.content)
+    output.close()
+    print("Archivo descargado:",file)
+#asignación de variables
+    link = "http://portalbissrs.xm.com.co/oferta/Histricos/Generacion_(kWh)_2021.xlsx"
+    file = "COLOMBIA_Generacion_2021_kWh.xlsx"
+    descarga(link,file)
+#lectura del archivo descargado
+import pandas as pd
+#conversión excel a csv
+read_file = pd.read_excel(r"COLOMBIA_Generacion_2021_kWh.xlsx",header = 2)
+read_file.to_csv(r"COLOMBIA_Generacion_2021_kWh.csv", index = None, header=True)
+#gathering
+df = pd.read_csv("COLOMBIA_Generacion_2021_kWh.csv",sep = ',')
+df
+df = df.fillna(0) #reemplazamos datos na por 0
+df["Fecha"] = pd.to_datetime(df["Fecha"]) #cambiamos el tipo de dato de la columna fecha a datetype
+df = df[df['Tipo Generación'] == 'TERMICA'] #filtrado tipo recurso
+#df_fecha_escogida = df[df['Fecha'] == 'yyyy-mm-dd']
+fecha = '2021-06-07'#<-INGRESAR DATO MANUALMENTE
+df_fecha_escogida = df[df['Fecha'] == fecha]
+df_fecha_escogida
+#escoger el recurso que se quiere analizar
+recurso = 'AUTOG REFICAR'#<---INGRESAR DATO MANUALMENTE
+df_fechayrecurso_escogidos = df_fecha_escogida[df_fecha_escogida['Recurso'] == recurso]
+df_fechayrecurso_escogidos;
+df_analize = df_fechayrecurso_escogidos.T
+df_analize.columns = ['Valor']
+df_analize;
+df_analize_kWh = df_analize.iloc[9:-1]
+df_analize_kWh.columns = ['kWh']
+df_analize_kWh;
+import matplotlib.pyplot as plt # library for visualization
+import seaborn as sns # library for visualization
+#Visualization
+labels = ["Gen-kWh"]
+sns.set_style("whitegrid")
+titulo = 'Curva_generación_planta_fotovoltaica_COLOMBIA - ' + recurso + 'Fecha- ' + fecha
+plt.figure(figsize = (20,8))
+plt.plot(df_analize_kWh.index,
+df_analize_kWh["kWh"],
+color = "#FFCC00",
+linewidth=4.0)
+plt.title('Curva de generación planta Termica COLOMBIA - ' + recurso + 'Fecha: ' + fecha, fontsize = 14, fontweight = "bold")
+plt.ylabel("kWh")
+plt.legend(labels = labels, fontsize = "large")
+plt.savefig(titulo + '.svg', format='svg', dpi=1200)
+plt.show()
